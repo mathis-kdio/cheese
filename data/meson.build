@@ -4,6 +4,7 @@ resource_data = files(
   'cheese-prefs.ui',
   'headerbar.ui',
   'menus.ui',
+  'mail.ui',
   'pixmaps/cheese-1.svg',
   'pixmaps/cheese-2.svg',
   'pixmaps/cheese-3.svg',

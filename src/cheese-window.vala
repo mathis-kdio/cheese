@@ -40,8 +40,10 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
         { "file-trash", on_file_trash },
         { "file-delete", on_file_delete },
         { "effects-next", on_effects_next },
-        { "effects-previous", on_effects_previous }
+        { "effects-previous", on_effects_previous },
     };
+
+    private MailDialog mail_dialog;
 
     private MediaMode current_mode;
 
@@ -66,15 +68,15 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     [GtkChild]
     private Gtk.Widget leave_fullscreen_button_box;
     [GtkChild]
-    private Gtk.Button take_action_button;
+    private Gtk.Button take_action_button; //bouton pour prendre photo
     [GtkChild]
     private Gtk.Image take_action_button_image;
     [GtkChild]
-    private Gtk.ToggleButton effects_toggle_button;
+    private Gtk.ToggleButton effects_toggle_button; //bouton effet
     [GtkChild]
     private Gtk.Widget buttons_area;
     [GtkChild]
-    private Gtk.Button switch_camera_button;
+    private Gtk.Button switch_camera_button; //bouton quand multiple camera
     private Gtk.Menu thumbnail_popup;
 
     private Clutter.Stage viewport;
@@ -96,7 +98,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
   private bool is_bursting;
   private bool is_effects_selector_active;
   private bool action_cancelled;
-    private bool was_maximized;
+  private bool was_maximized;
 
   private Cheese.Camera   camera;
   private Cheese.FileUtil fileutil;
@@ -119,18 +121,15 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
   }
 
     public MainWindow (Gtk.Application application)
-    {
-        GLib.Object (application: application);
-
-        header_bar = header_bar_ui.get_object ("header_bar") as Gtk.HeaderBar;
-
-        Gtk.Settings settings = Gtk.Settings.get_default ();
-
-        if (settings.gtk_dialogs_use_header)
-        {
-            header_bar.visible = true;
-            this.set_titlebar (header_bar);
-        }
+    {      
+      GLib.Object (application: application);
+      header_bar = header_bar_ui.get_object ("header_bar") as Gtk.HeaderBar;
+      Gtk.Settings settings = Gtk.Settings.get_default ();
+      if (settings.gtk_dialogs_use_header)
+      {
+          header_bar.visible = true;
+          this.set_titlebar (header_bar);
+      }
     }
 
     private void set_window_title (string title)
@@ -214,10 +213,10 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     string filename, uri;
 
     Gdk.Screen screen;
-    filename = thumb_view.get_selected_image ();
+    filename = "/home/pst/Images/Webcam/Photo_PST_Borne_Photo_Connectee.jpg";
 
     if (filename == null)
-      return;                     /* Nothing selected. */
+      return;/* Nothing selected. */
 
     try
     {
@@ -525,10 +524,10 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
                                                     EventMotion e)
     {
         clear_fullscreen_timeout ();
-        this.unfullscreen ();
+        //this.unfullscreen ();
         this.maximize ();
         buttons_area.show ();
-        set_fullscreen_timeout ();
+        //set_fullscreen_timeout ();
         return true;
     }
 
@@ -562,7 +561,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
 
       this.fullscreen ();
       viewport_widget.motion_notify_event.connect (fullscreen_motion_notify_callback);
-      set_fullscreen_timeout ();
+      //set_fullscreen_timeout ();
     }
     else
     {
@@ -672,9 +671,11 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
                                 viewport.height-20);
   }
 
-  /**
-   * The method to call when the countdown is finished.
-   */
+  public void on_mail ()
+  {
+      mail_dialog.show ();
+  }
+
   private void finish_countdown_callback ()
   {
     if (action_cancelled == false)
@@ -690,13 +691,37 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
                                    Canberra.PROP_MEDIA_ROLE, "event",
                                    Canberra.PROP_EVENT_DESCRIPTION, _("Shutter sound"),
                                    null);
-      this.camera.take_photo (file_name);
+      this.camera.take_photo ("/home/pst/Images/Webcam/Photo_PST_Borne_Photo_Connectee.jpg");
+      
+      //Sleep pour laisser le temps à la photo de se générer
+      GLib.MainLoop loop = new GLib.MainLoop ();
+      do_stuff.begin ((obj, async_res) => {
+          loop.quit ();
+        });
+      loop.run ();
+
+      //Ouverture de la photo qui vient d'être prise
+      mail_dialog = new MailDialog ();
+      on_mail();
     }
 
     if (current_mode == MediaMode.PHOTO)
     {
       enable_mode_change ();
     }
+  }
+
+  //Fonctions permettant de faire un sleep
+  public async void nap (uint interval, int priority = GLib.Priority.DEFAULT) {
+    GLib.Timeout.add (interval, () => {
+        nap.callback ();
+        return false;
+      }, priority);
+    yield;
+  }
+  
+  private async void do_stuff () {
+    yield nap (800);
   }
 
   Countdown current_countdown;
@@ -886,7 +911,6 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     {
       if (current_countdown != null && current_countdown.running)
         current_countdown.stop ();
-
       is_bursting = false;
       this.enable_mode_change ();
       take_action_button.tooltip_text = _("Take multiple photos");
@@ -1302,7 +1326,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
    */
   public void setup_ui ()
   {
-        clutter_builder = new Clutter.Script ();
+    clutter_builder = new Clutter.Script ();
     fileutil        = new FileUtil ();
     flash           = new Flash (this);
     settings        = new GLib.Settings ("org.gnome.Cheese");
@@ -1348,7 +1372,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
     viewport.allocation_changed.connect (on_stage_resize);
 
     thumb_view = new Cheese.ThumbView ();
-    thumb_nav  = new Eog.ThumbNav (thumb_view, false);
+    //thumb_nav  = new Eog.ThumbNav (thumb_view, false);
         thumbnail_popup.attach_to_widget (thumb_view, null);
         thumb_view.popup_menu.connect (on_thumb_view_popup_menu);
 
@@ -1412,7 +1436,7 @@ public class Cheese.MainWindow : Gtk.ApplicationWindow
         switch (current_mode)
         {
             case MediaMode.PHOTO:
-                take_action_button.tooltip_text = _("Take a photo using a webcam");
+                take_action_button.tooltip_text = _("Take a Photo");
                 break;
 
             case MediaMode.VIDEO:

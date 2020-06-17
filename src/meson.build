@@ -5,6 +5,7 @@ sources = files(
   'cheese-main.vala',
   'cheese-preferences.vala',
   'cheese-window.vala',
+  'cheese-mail.vala',
   'thumbview/cheese-thumbnail.c',
   'thumbview/cheese-thumb-view.c',
   'thumbview/eog-thumb-nav.c',
